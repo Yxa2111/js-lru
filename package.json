@@ -1,7 +1,7 @@
 {
-  "name": "lru_map",
-  "version": "0.4.1",
-  "description": "Finite key-value map using the Least Recently Used (LRU) algorithm where the most recently used objects are keept in the map while less recently used items are evicted to make room for new ones.",
+  "name": "lru_map_yxa2111",
+  "version": "0.4.2",
+  "description": "is a fork of https://github.com/rsms/js-lru.git",
   "main": "dist/lru.js",
   "types": "lru.d.ts",
   "typings": "lru.d.ts",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rsms/js-lru.git"
+    "url": "git+https://github.com/yxa2111/js-lru.git#yxaa"
   },
   "files": [
     "README.md",
