@@ -287,6 +287,24 @@ toJSON() {
   ]);
 },
 
+customSize() {
+  let c = new LRUMap(4, [
+    ['k1', 3]
+  ], function(v) { return v })
+  assert.equal(c.size, 3)
+  c.set('k1', 2)
+  assert.equal(c.size, 2)
+  c.set('k2', 4)
+  assert.deepEqual(c.toJSON(), [
+    {key:'k2', value:4}
+  ])
+  c.set('k1', 2)
+  c.set('k2', 2)
+  assert.deepEqual(c.toJSON(), [
+    {key:'k1', value:2},
+    {key:'k2', value:2}
+  ])
+}
 
 }; // tests
 

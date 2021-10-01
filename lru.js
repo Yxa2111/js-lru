@@ -30,7 +30,7 @@ const NEWER = Symbol('newer');
 const OLDER = Symbol('older');
 
 class LRUMap {
-  constructor(limit, entries) {
+  constructor(limit, entries, size_func) {
     if (typeof limit !== 'number') {
       // called as (entries)
       entries = limit;
@@ -41,6 +41,7 @@ class LRUMap {
     this.limit = limit;
     this.oldest = this.newest = undefined;
     this._keymap = new Map();
+    this._size_func = size_func || function(_) { return 1; }
 
     if (entries) {
       this.assign(entries);
@@ -80,9 +81,12 @@ class LRUMap {
     let entry, limit = this.limit || Number.MAX_VALUE;
     this._keymap.clear();
     let it = entries[Symbol.iterator]();
+    let size = 0
     for (let itv = it.next(); !itv.done; itv = it.next()) {
       let e = new Entry(itv.value[0], itv.value[1]);
       this._keymap.set(e.key, e);
+      const val_size = this._size_func(e.value)
+      size += val_size
       if (!entry) {
         this.oldest = e;
       } else {
@@ -90,12 +94,14 @@ class LRUMap {
         e[OLDER] = entry;
       }
       entry = e;
-      if (limit-- == 0) {
+      if (limit <= 0) {
         throw new Error('overflow');
       }
+      limit -= val_size
     }
     this.newest = entry;
-    this.size = this._keymap.size;
+    this.size = size;
+    //this._try_shift()
   }
 
   get(key) {
@@ -112,7 +118,9 @@ class LRUMap {
 
     if (entry) {
       // update existing
+      this.size -= this._size_func(entry.value)
       entry.value = value;
+      this.size += this._size_func(value)
       this._markEntryAsUsed(entry);
       return this;
     }
@@ -131,13 +139,17 @@ class LRUMap {
 
     // add new entry to the end of the linked list -- it's now the freshest entry.
     this.newest = entry;
-    ++this.size;
-    if (this.size > this.limit) {
+    this.size += this._size_func(value)
+    this._try_shift()
+
+    return this;
+  }
+
+  _try_shift() {
+    if (this.size > this.limit && this._keymap.size > 1) {
       // we hit the limit -- remove the head
       this.shift();
     }
-
-    return this;
   }
 
   shift() {
@@ -157,7 +169,7 @@ class LRUMap {
       // entry being returned:
       entry[NEWER] = entry[OLDER] = undefined;
       this._keymap.delete(entry.key);
-      --this.size;
+      this.size -= this._size_func(entry.value)
       return [entry.key, entry.value];
     }
   }
@@ -197,7 +209,7 @@ class LRUMap {
       this.oldest = this.newest = undefined;
     }
 
-    this.size--;
+    this.size -= this._size_func(entry.value)
     return entry.value;
   }
 
@@ -237,7 +249,7 @@ class LRUMap {
 
   /** Returns a JSON (array) representation */
   toJSON() {
-    var s = new Array(this.size), i = 0, entry = this.oldest;
+    var s = new Array(this._keymap.size), i = 0, entry = this.oldest;
     while (entry) {
       s[i++] = { key: entry.key, value: entry.value };
       entry = entry[NEWER];
