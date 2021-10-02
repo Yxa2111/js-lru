@@ -1,6 +1,6 @@
 {
   "name": "lru_map_yxa2111",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "is a fork of https://github.com/rsms/js-lru.git",
   "main": "dist/lru.js",
   "types": "lru.d.ts",
