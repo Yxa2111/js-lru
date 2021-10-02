@@ -304,6 +304,36 @@ customSize() {
     {key:'k1', value:2},
     {key:'k2', value:2}
   ])
+},
+
+deleter() {
+  let data = [
+    ['k1', 1, false],
+    ['k2', 2, false],
+    ['k3', 3, false]
+  ]
+  let entries = []
+  for (let d of data) {
+    entries.push([d[0], d])
+  }
+  let deleter = (v) => {
+    console.log(`delete val ${v}`)
+    v[2] = true
+  }
+  let c = new LRUMap(3, entries, null, deleter)
+  c.set('k4', 4)
+  assert.equal(c.get('k1'), null)
+  assert.equal(data[0][2], true)
+  c.set('k3', ['', 3, false])
+  assert.equal(data[2][2], true)
+  c.set('k3', data[2])
+  data[0][2] = false
+  c.assign(entries)
+  c.assign([])
+  assert.equal(c.size, 0)
+  for (let d of data) {
+    assert.equal(d[2], true)
+  }
 }
 
 }; // tests

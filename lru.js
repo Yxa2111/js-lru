@@ -30,7 +30,7 @@ const NEWER = Symbol('newer');
 const OLDER = Symbol('older');
 
 class LRUMap {
-  constructor(limit, entries, size_func) {
+  constructor(limit, entries, size_func, deleter) {
     if (typeof limit !== 'number') {
       // called as (entries)
       entries = limit;
@@ -41,7 +41,9 @@ class LRUMap {
     this.limit = limit;
     this.oldest = this.newest = undefined;
     this._keymap = new Map();
-    this._size_func = size_func || function(_) { return 1; }
+    size_func = size_func || (() => 1)
+    this._size_func = (v => Math.max(size_func(v), 1))
+    this._deleter = deleter || (() => {})
 
     if (entries) {
       this.assign(entries);
@@ -78,6 +80,9 @@ class LRUMap {
   }
 
   assign(entries) {
+    if (this.size > 0) {
+      this.clear()
+    }
     let entry, limit = this.limit || Number.MAX_VALUE;
     this._keymap.clear();
     let it = entries[Symbol.iterator]();
@@ -118,7 +123,7 @@ class LRUMap {
 
     if (entry) {
       // update existing
-      this.size -= this._size_func(entry.value)
+      this.delete_val(entry.value)
       entry.value = value;
       this.size += this._size_func(value)
       this._markEntryAsUsed(entry);
@@ -169,9 +174,14 @@ class LRUMap {
       // entry being returned:
       entry[NEWER] = entry[OLDER] = undefined;
       this._keymap.delete(entry.key);
-      this.size -= this._size_func(entry.value)
+      this.delete_val(entry.value)
       return [entry.key, entry.value];
     }
+  }
+
+  delete_val(value) {
+    this.size -= this._size_func(value)
+    this._deleter(value)
   }
 
   // -------------------------------------------------------------------------------------
@@ -209,13 +219,15 @@ class LRUMap {
       this.oldest = this.newest = undefined;
     }
 
-    this.size -= this._size_func(entry.value)
+    this.delete_val(entry.value)
     return entry.value;
   }
 
   clear() {
     // Not clearing links should be safe, as we don't expose live links to user
-    this.oldest = this.newest = undefined;
+    while (this.size > 0) {
+      this.shift()
+    }
     this.size = 0;
     this._keymap.clear();
   }
