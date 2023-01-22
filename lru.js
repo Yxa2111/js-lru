@@ -123,10 +123,10 @@ class LRUMap {
 
     if (entry) {
       // update existing
-      this.delete_val(entry.value)
-      entry.value = value;
-      this.size += this._size_func(value)
-      this._markEntryAsUsed(entry);
+      // this.delete_val(entry.value)
+      // entry.value = value;
+      // this.size += this._size_func(value)
+      // this._markEntryAsUsed(entry);
       return this;
     }
 
